@@ -364,6 +364,7 @@ class ArMailerRails3::ARSendmail
   # Delivers +emails+ to ActionMailer's SMTP server and destroys them.
 
   def deliver(emails)
+    log "Setting up SMTP"
     settings = [
       smtp_settings[:domain],
       (smtp_settings[:user] || smtp_settings[:user_name]),
@@ -371,6 +372,7 @@ class ArMailerRails3::ARSendmail
       smtp_settings[:authentication]
     ]
 
+    log "SMTP settings #{smtp_settings.merge({password: nil})}"
     smtp = Net::SMTP.new(smtp_settings[:address], smtp_settings[:port])
     if smtp.respond_to?(:enable_starttls_auto)
       smtp.enable_starttls_auto unless smtp_settings[:tls] == false
@@ -378,11 +380,13 @@ class ArMailerRails3::ARSendmail
       settings << smtp_settings[:tls]
     end
 
+    log "Starting SMTP"
     smtp.start(*settings) do |session|
       @failed_auth_count = 0
       until emails.empty? do
-        email = emails.shift
+        email = emails.to_a.shift
         begin
+          log "about to send email %011d from %s to %s" % [email.id, email.from, email.to]
           res = session.send_message email.mail, email.from, email.to
           email.destroy
           log "sent email %011d from %s to %s: %p" %
@@ -400,6 +404,9 @@ class ArMailerRails3::ARSendmail
           email.save rescue nil
           log "error sending email %d: %p(%s):\n\t%s" %
                 [email.id, e.message, e.class, e.backtrace.join("\n\t")]
+          session.reset
+        rescue StandardError => e
+          log "Could not send message: #{e.message}, #{e.backtrace}"
           session.reset
         end
       end
@@ -467,7 +474,8 @@ class ArMailerRails3::ARSendmail
         cleanup
         emails = find_emails
         deliver(emails) unless emails.empty?
-      rescue
+      rescue StandardError => e
+        log "Could not deliver: #{e.message} - #{e.backtrace}"
       end
       break if @once
       sleep @delay
