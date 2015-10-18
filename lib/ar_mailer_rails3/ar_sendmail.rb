@@ -105,7 +105,7 @@ class ArMailerRails3::ARSendmail
   # to learn how to enable ActiveRecord::Timestamp.
 
   def self.mailq
-    emails = self.email_class.find :all
+    emails = self.email_class.all
 
     if emails.empty? then
       puts "Mail queue is empty"
