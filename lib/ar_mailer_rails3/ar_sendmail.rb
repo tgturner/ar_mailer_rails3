@@ -431,9 +431,9 @@ class ArMailerRails3::ARSendmail
   # last 300 seconds.
 
   def find_emails
-    options = { :conditions => ['last_send_attempt < ?', Time.now.to_i - 300] }
-    options[:limit] = batch_size unless batch_size.nil?
-    mail = self.class.email_class.find :all, options
+    #options = { :conditions => ['last_send_attempt < ?', Time.now.to_i - 300] }
+    #options[:limit] = batch_size unless batch_size.nil?
+    mail = self.class.email_class.where(last_send_attempt: Time.now.to_i - 300).limit(batch_size)
 
     log "found #{mail.length} emails to send"
     mail
