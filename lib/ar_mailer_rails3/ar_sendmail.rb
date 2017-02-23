@@ -384,7 +384,7 @@ class ArMailerRails3::ARSendmail
     smtp.start(*settings) do |session|
       @failed_auth_count = 0
       instantiated_emails = emails.to_a
-      until emails.empty? do
+      until instantiated_emails.empty? do
         email = instantiated_emails.shift
         begin
           log "about to send email %011d from %s to %s" % [email.id, email.from, email.to]
